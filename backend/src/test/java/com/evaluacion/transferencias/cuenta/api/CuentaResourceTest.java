@@ -100,6 +100,15 @@ class CuentaResourceTest {
     }
 
     @Test
+    void postTipoDesconocidoDevuelve400ConFormatoDeLaApi() {
+        given().contentType(ContentType.JSON).body(cuerpo(DatosPrueba.numeroUnico(), "10.00", "PLAZO", "ACTIVA"))
+                .when().post("/api/cuentas")
+                .then().statusCode(400)
+                .body("codigo", equalTo("JSON_INVALIDO"))
+                .body("detalles", hasItem(startsWith("tipo: valor 'PLAZO' no permitido")));
+    }
+
+    @Test
     void getListaCuentasPaginadas() {
         String numero = DatosPrueba.numeroUnico();
         given().contentType(ContentType.JSON).body(cuerpoValido(numero)).post("/api/cuentas").then().statusCode(201);

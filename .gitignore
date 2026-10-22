@@ -35,3 +35,6 @@ credentials*.txt
 
 # Claude Code (configuración local)
 .claude/settings.local.json
+
+# Base de conocimiento local para evaluación (no se versiona)
+knowledge-base/
