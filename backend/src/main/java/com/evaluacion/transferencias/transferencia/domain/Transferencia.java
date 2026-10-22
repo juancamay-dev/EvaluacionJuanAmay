@@ -1,6 +1,7 @@
 package com.evaluacion.transferencias.transferencia.domain;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -63,7 +64,7 @@ public class Transferencia {
         }
         this.cuentaOrigen = origen;
         this.cuentaDestino = destino;
-        this.monto = monto;
+        this.monto = monto.setScale(2, RoundingMode.HALF_EVEN);
         this.estado = estado;
         this.motivo = motivo;
         this.fecha = Objects.requireNonNull(fecha, "La fecha es obligatoria");

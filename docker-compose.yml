@@ -18,5 +18,28 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
+  backend:
+    build: ./backend
+    container_name: evaluacion-backend
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/transferencias_db
+      DB_USER: app
+      DB_PASSWORD: app123
+      CORS_ORIGINS: http://localhost:4200
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: on-failure
+
+  frontend:
+    build: ./frontend
+    container_name: evaluacion-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
 volumes:
   mysql-data:
