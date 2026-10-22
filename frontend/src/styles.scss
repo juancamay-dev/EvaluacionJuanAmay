@@ -37,3 +37,25 @@ body {
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Mensajes de estado compartidos por los componentes */
+.alerta {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font: var(--mat-sys-body-medium);
+}
+
+.alerta-exito {
+  background: #e6f4ea;
+  color: #0d5323;
+}
+
+.alerta-aviso {
+  background: #fef7e0;
+  color: #7a4f01;
+}
+
+.alerta-error {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
