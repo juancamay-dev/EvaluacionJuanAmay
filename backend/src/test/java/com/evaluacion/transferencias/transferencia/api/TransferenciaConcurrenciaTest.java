@@ -16,6 +16,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import com.evaluacion.transferencias.cuenta.domain.Cuenta;
+import com.evaluacion.transferencias.support.ApiPrueba;
 import com.evaluacion.transferencias.support.DatosPrueba;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -45,7 +46,7 @@ class TransferenciaConcurrenciaTest {
     }
 
     private static Callable<Integer> transferencia(Cuenta origen, Cuenta destino, String monto) {
-        return () -> TransferenciaResourceTest.transferir(origen.getNumeroCuenta(), destino.getNumeroCuenta(), monto)
+        return () -> ApiPrueba.transferir(origen.getNumeroCuenta(), destino.getNumeroCuenta(), monto)
                 .extract().statusCode();
     }
 

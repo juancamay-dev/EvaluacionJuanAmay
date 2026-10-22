@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,13 +37,17 @@ import com.evaluacion.transferencias.cuenta.infrastructure.CuentaRepository;
 import com.evaluacion.transferencias.shared.error.RecursoNoEncontradoException;
 import com.evaluacion.transferencias.shared.error.SolicitudInvalidaException;
 import com.evaluacion.transferencias.shared.error.TransferenciaRechazadaException;
+import com.evaluacion.transferencias.transferencia.application.dto.HistorialFiltro;
 import com.evaluacion.transferencias.transferencia.application.dto.TransferenciaRequest;
 import com.evaluacion.transferencias.transferencia.application.dto.TransferenciaResponse;
 import com.evaluacion.transferencias.transferencia.domain.EstadoTransferencia;
 import com.evaluacion.transferencias.transferencia.domain.EvaluacionLimite;
 import com.evaluacion.transferencias.transferencia.domain.ResultadoDeteccion;
 import com.evaluacion.transferencias.transferencia.domain.Transferencia;
+import com.evaluacion.transferencias.transferencia.infrastructure.FiltroTransferencias;
 import com.evaluacion.transferencias.transferencia.infrastructure.TransferenciaRepository;
+
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -208,5 +213,51 @@ class TransferenciaServiceTest {
                 () -> service.ejecutar(request(ORIGEN, DESTINO, "5000.00")));
 
         assertEquals(15L, e.getTransferenciaId());
+    }
+
+    @SuppressWarnings("unchecked")
+    private FiltroTransferencias filtroConsultado(HistorialFiltro filtro) {
+        PanacheQuery<Transferencia> consulta = mock(PanacheQuery.class);
+        when(consulta.page(0, 20)).thenReturn(consulta);
+        when(consulta.list()).thenReturn(List.of());
+        when(transferenciaRepository.buscar(any())).thenReturn(consulta);
+
+        service.historial(filtro, 0, 20);
+
+        ArgumentCaptor<FiltroTransferencias> captor = ArgumentCaptor.forClass(FiltroTransferencias.class);
+        verify(transferenciaRepository).buscar(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    void historialConvierteFechasLocalesAIntervaloUtc() {
+        FiltroTransferencias filtro = filtroConsultado(
+                new HistorialFiltro(ORIGEN, DESTINO, "2026-10-01", "2026-10-31", "en_revision"));
+
+        assertEquals(Instant.parse("2026-10-01T05:00:00Z"), filtro.desde());
+        assertEquals(Instant.parse("2026-11-01T05:00:00Z"), filtro.hasta());
+        assertEquals(ORIGEN, filtro.cuentaOrigen());
+        assertEquals(DESTINO, filtro.cuentaDestino());
+        assertEquals(EstadoTransferencia.EN_REVISION, filtro.estado());
+    }
+
+    @Test
+    void historialConDesdePosteriorAHastaLanzaSolicitudInvalida() {
+        assertThrows(SolicitudInvalidaException.class, () -> service.historial(
+                new HistorialFiltro(null, null, "2026-10-31", "2026-10-01", null), 0, 20));
+    }
+
+    @Test
+    void historialConEstadoInexistenteLanzaSolicitudInvalida() {
+        assertThrows(SolicitudInvalidaException.class, () -> service.historial(
+                new HistorialFiltro(null, null, null, null, "PENDIENTE"), 0, 20));
+        assertEquals(EstadoTransferencia.RECHAZADA,
+                filtroConsultado(new HistorialFiltro(null, null, null, null, "Rechazada")).estado());
+    }
+
+    @Test
+    void historialConFechaMalFormadaLanzaSolicitudInvalida() {
+        assertThrows(SolicitudInvalidaException.class, () -> service.historial(
+                new HistorialFiltro(null, null, "21/10/2026", null, null), 0, 20));
     }
 }

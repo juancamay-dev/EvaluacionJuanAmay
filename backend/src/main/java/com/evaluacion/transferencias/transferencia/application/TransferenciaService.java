@@ -3,6 +3,11 @@ package com.evaluacion.transferencias.transferencia.application;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -16,12 +21,18 @@ import com.evaluacion.transferencias.cuenta.infrastructure.CuentaRepository;
 import com.evaluacion.transferencias.shared.error.RecursoNoEncontradoException;
 import com.evaluacion.transferencias.shared.error.SolicitudInvalidaException;
 import com.evaluacion.transferencias.shared.error.TransferenciaRechazadaException;
+import com.evaluacion.transferencias.shared.pagination.PaginaResponse;
+import com.evaluacion.transferencias.transferencia.application.dto.HistorialFiltro;
 import com.evaluacion.transferencias.transferencia.application.dto.TransferenciaRequest;
 import com.evaluacion.transferencias.transferencia.application.dto.TransferenciaResponse;
+import com.evaluacion.transferencias.transferencia.domain.EstadoTransferencia;
 import com.evaluacion.transferencias.transferencia.domain.EvaluacionLimite;
 import com.evaluacion.transferencias.transferencia.domain.ResultadoDeteccion;
 import com.evaluacion.transferencias.transferencia.domain.Transferencia;
+import com.evaluacion.transferencias.transferencia.infrastructure.FiltroTransferencias;
 import com.evaluacion.transferencias.transferencia.infrastructure.TransferenciaRepository;
+
+import io.quarkus.hibernate.orm.panache.PanacheQuery;
 
 @ApplicationScoped
 public class TransferenciaService {
@@ -70,6 +81,50 @@ public class TransferenciaService {
         LOG.infof("transferencia.ejecutada id=%d origen=%s destino=%s monto=%s estado=%s", transferencia.getId(),
                 request.cuentaOrigen(), request.cuentaDestino(), request.monto(), transferencia.getEstado());
         return TransferenciaMapper.toResponse(transferencia);
+    }
+
+    /**
+     * Historial ordenado por fecha descendente. Las fechas son días calendario de la zona del negocio,
+     * inclusivos: desde 2026-10-01 hasta 2026-10-31 se consulta como [01/10 00:00, 01/11 00:00).
+     */
+    public PaginaResponse<TransferenciaResponse> historial(HistorialFiltro filtro, int pagina, int tamano) {
+        ZoneId zona = reloj.getZone();
+        LocalDate desde = fecha(filtro.desde(), "desde");
+        LocalDate hasta = fecha(filtro.hasta(), "hasta");
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            throw new SolicitudInvalidaException("La fecha desde no puede ser posterior a la fecha hasta");
+        }
+        FiltroTransferencias criterios = new FiltroTransferencias(filtro.cuentaOrigen(), filtro.cuentaDestino(),
+                desde == null ? null : desde.atStartOfDay(zona).toInstant(),
+                hasta == null ? null : hasta.plusDays(1).atStartOfDay(zona).toInstant(),
+                estado(filtro.estado()));
+        PanacheQuery<Transferencia> consulta = transferenciaRepository.buscar(criterios).page(pagina, tamano);
+        List<TransferenciaResponse> contenido = consulta.list().stream().map(TransferenciaMapper::toResponse)
+                .toList();
+        return PaginaResponse.of(contenido, pagina, tamano, consulta.count());
+    }
+
+    private static LocalDate fecha(String valor, String campo) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(valor);
+        } catch (DateTimeParseException e) {
+            throw new SolicitudInvalidaException("La fecha " + campo + " debe tener el formato yyyy-MM-dd");
+        }
+    }
+
+    private static EstadoTransferencia estado(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return EstadoTransferencia.valueOf(valor.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new SolicitudInvalidaException("Estado inválido: " + valor + ". Valores permitidos: "
+                    + Arrays.toString(EstadoTransferencia.values()));
+        }
     }
 
     /**

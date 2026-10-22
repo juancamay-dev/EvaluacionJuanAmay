@@ -9,8 +9,13 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
+import jakarta.inject.Inject;
+
 import org.junit.jupiter.api.Test;
 
+import com.evaluacion.transferencias.cuenta.domain.Cuenta;
+
+import com.evaluacion.transferencias.support.ApiPrueba;
 import com.evaluacion.transferencias.support.DatosPrueba;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,6 +23,9 @@ import io.restassured.http.ContentType;
 
 @QuarkusTest
 class CuentaResourceTest {
+
+    @Inject
+    DatosPrueba datos;
 
     private static String cuerpo(String numero, String saldo, String tipo, String estado) {
         return """
@@ -107,6 +115,36 @@ class CuentaResourceTest {
     @Test
     void getPorIdInexistenteDevuelve404() {
         given().when().get("/api/cuentas/999999999")
+                .then().statusCode(404)
+                .body("codigo", equalTo("RECURSO_NO_ENCONTRADO"));
+    }
+
+    @Test
+    void resumenReflejaLasOperacionesDelDia() {
+        Cuenta origen = datos.cuenta(DatosPrueba.numeroUnico(), "6000.00");
+        Cuenta destino = datos.cuenta(DatosPrueba.numeroUnico(), "0.00");
+        ApiPrueba.transferir(origen.getNumeroCuenta(), destino.getNumeroCuenta(), "100.00")
+                .statusCode(201);
+        ApiPrueba.transferir(origen.getNumeroCuenta(), destino.getNumeroCuenta(), "5000.01")
+                .statusCode(201);
+        ApiPrueba.transferir(origen.getNumeroCuenta(), destino.getNumeroCuenta(), "1000.00")
+                .statusCode(422);
+
+        given().when().get("/api/cuentas/" + origen.getId() + "/resumen")
+                .then().statusCode(200)
+                .body("numeroCuenta", equalTo(origen.getNumeroCuenta()))
+                .body("saldoActual", equalTo(899.99f))
+                .body("totalTransferidoHoy", equalTo(5100.01f))
+                .body("cantidadTransferenciasHoy", equalTo(2))
+                .body("sospechosasHoy", equalTo(1))
+                .body("sospechosasTotales", equalTo(1))
+                .body("limiteDiario", equalTo(10000.00f))
+                .body("disponibleHoy", equalTo(4899.99f));
+    }
+
+    @Test
+    void resumenDeCuentaInexistenteDevuelve404() {
+        given().when().get("/api/cuentas/999999999/resumen")
                 .then().statusCode(404)
                 .body("codigo", equalTo("RECURSO_NO_ENCONTRADO"));
     }

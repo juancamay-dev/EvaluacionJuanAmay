@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.UriInfo;
 import com.evaluacion.transferencias.cuenta.application.CuentaService;
 import com.evaluacion.transferencias.cuenta.application.dto.CuentaRequest;
 import com.evaluacion.transferencias.cuenta.application.dto.CuentaResponse;
+import com.evaluacion.transferencias.cuenta.application.dto.ResumenCuentaResponse;
 import com.evaluacion.transferencias.shared.pagination.PaginaResponse;
 
 @Path("/api/cuentas")
@@ -56,5 +57,11 @@ public class CuentaResource {
     @Path("/{id}")
     public CuentaResponse obtener(@PathParam("id") Long id) {
         return cuentaService.obtener(id);
+    }
+
+    @GET
+    @Path("/{id}/resumen")
+    public ResumenCuentaResponse resumen(@PathParam("id") Long id) {
+        return cuentaService.resumen(id);
     }
 }

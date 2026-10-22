@@ -1,5 +1,6 @@
 package com.evaluacion.transferencias.transferencia.api;
 
+import static com.evaluacion.transferencias.support.ApiPrueba.transferir;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -19,8 +20,6 @@ import com.evaluacion.transferencias.transferencia.domain.Transferencia;
 import com.evaluacion.transferencias.transferencia.infrastructure.TransferenciaRepository;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import io.restassured.response.ValidatableResponse;
 
 @QuarkusTest
 class TransferenciaResourceTest {
@@ -30,15 +29,6 @@ class TransferenciaResourceTest {
 
     @Inject
     TransferenciaRepository transferenciaRepository;
-
-    static ValidatableResponse transferir(String origen, String destino, String monto) {
-        return given().contentType(ContentType.JSON)
-                .body("""
-                        {"cuentaOrigen":"%s","cuentaDestino":"%s","monto":%s}
-                        """.formatted(origen, destino, monto))
-                .when().post("/api/transferencias")
-                .then();
-    }
 
     private Cuenta cuenta(String saldo) {
         return datos.cuenta(DatosPrueba.numeroUnico(), saldo);
