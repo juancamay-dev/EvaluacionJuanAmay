@@ -1,0 +1,59 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Cuentas bancarias</mat-card-title>
+    <mat-card-subtitle>{{ cuentas().length }} registradas</mat-card-subtitle>
+    <button mat-icon-button class="recargar" type="button" aria-label="Recargar cuentas" (click)="cargar()"
+            [disabled]="cargando()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </mat-card-header>
+
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card-content>
+    @if (error(); as mensaje) {
+      <div class="alerta alerta-error" role="alert">{{ mensaje }}</div>
+    }
+
+    <div class="tabla-contenedor">
+      <table mat-table [dataSource]="cuentasOrdenadas()" matSort (matSortChange)="ordenar($event)">
+        <ng-container matColumnDef="numeroCuenta">
+          <th mat-header-cell *matHeaderCellDef>Número de cuenta</th>
+          <td mat-cell *matCellDef="let cuenta" class="numero">{{ cuenta.numeroCuenta }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="titular">
+          <th mat-header-cell *matHeaderCellDef>Titular</th>
+          <td mat-cell *matCellDef="let cuenta">{{ cuenta.titular }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let cuenta">{{ cuenta.tipo | titlecase }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="saldo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before" class="derecha">Saldo</th>
+          <td mat-cell *matCellDef="let cuenta" class="derecha">{{ cuenta.saldo | currency: 'USD' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let cuenta">
+            <span class="estado" [class.inactiva]="cuenta.estado === 'INACTIVA'">{{ cuenta.estado | titlecase }}</span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell sin-datos" [attr.colspan]="columnas.length">
+            {{ cargando() ? 'Cargando cuentas…' : error() ? 'No se pudieron cargar las cuentas' : 'No hay cuentas registradas' }}
+          </td>
+        </tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

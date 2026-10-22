@@ -1,0 +1,43 @@
+mat-card-header {
+  align-items: center;
+}
+
+.recargar {
+  margin-left: auto;
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+}
+
+.derecha {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sin-datos {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.estado {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  &.inactiva {
+    background: var(--mat-sys-surface-container-highest);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
