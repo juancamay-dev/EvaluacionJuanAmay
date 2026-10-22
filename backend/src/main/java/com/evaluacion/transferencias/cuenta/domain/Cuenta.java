@@ -1,6 +1,7 @@
 package com.evaluacion.transferencias.cuenta.domain;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -62,7 +63,7 @@ public class Cuenta {
         this.numeroCuenta = numeroCuenta;
         this.titular = titular;
         this.tipo = Objects.requireNonNull(tipo, "El tipo de cuenta es obligatorio");
-        this.saldo = saldoInicial;
+        this.saldo = saldoInicial.setScale(2, RoundingMode.HALF_EVEN);
         this.estado = Objects.requireNonNull(estado, "El estado es obligatorio");
         this.fechaCreacion = Objects.requireNonNull(fechaCreacion, "La fecha de creación es obligatoria");
     }
