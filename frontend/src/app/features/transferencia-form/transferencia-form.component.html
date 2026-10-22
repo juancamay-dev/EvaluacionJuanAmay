@@ -53,11 +53,10 @@
       <button mat-flat-button type="submit" [disabled]="enviando()">
         @if (enviando()) {
           <mat-spinner diameter="18" />
-          Procesando…
         } @else {
           <mat-icon>send</mat-icon>
-          Transferir
         }
+        {{ enviando() ? 'Procesando…' : 'Transferir' }}
       </button>
     </form>
 
